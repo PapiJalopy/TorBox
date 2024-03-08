@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import click
+import sys
+import os
+from pathlib import Path
+
+
+# fmt: off
+@click.command()
+@click.option('--name', '-n',
+                            default=None,
+                            type=str,
+                            help="Onion Service Name")
+@click.option('--onion-domain', '-od',
+                            default=None,
+                            type=str,
+                            help="Onion domain where TFS will be published")
+@click.option('--file-path', '-fp',
+                            default=None,
+                            type=str,
+                            help="Path to share")
+@click.option('--dev',
+                            default=False,
+                            type=bool,
+                            help="Run in development mode (Default: 0)")
+# fmt: on
+def main(name, onion_domain, file_path, dev):
+    if not name:
+        click.echo("Error: You must specify a name.")
+        click.echo(f"run {sys.argv[0]} --help for more info.")
+        sys.exit(1)
+
+    if not onion_domain:
+        click.echo("Error: Onion domain is required")
+        click.echo(f"run {sys.argv[0]} --help for more info.")
+        sys.exit(1)
+
+    instance_name = name
+    os.environ["INSTANCE_NAME"] = instance_name
+    os.environ["ONION_DOMAIN"] = onion_domain
+
+    # Check if another instance running have same name
+    base_dir = Path(__file__).resolve().parent
+
+    if os.path.exists(base_dir / f"pid/{instance_name}.pid"):
+        click.echo(
+            'Error: Another instance is already using name "%s"' % instance_name
+        )
+        sys.exit(1)
+
+    if file_path is None:
+        click.echo(f"Error: files-path must be set.")
+        click.echo(f"run {sys.argv[0]} --help for more info.")
+        sys.exit(1)
+
+    media_root = file_path
+
+    # Set environment vars for django settings
+    os.environ["MEDIA_ROOT"] = media_root
+    os.environ["DEBUG"] = "1" if dev else "0"
+
+    run_webserver(instance_name, dev)
+
+
+def run_webserver(instance_name, dev=True):
+    if dev:
+        # Dev
+        from main import main as dev_main
+
+        dev_main()
+
+        quit()
+    else:
+        # TODO: Production: run flask for production
+
+        # Remove pid file
+        try:
+            os.remove(settings.BASE_DIR / f"pid/{instance_name}.pid")
+        except:
+            pass
+
+
+if __name__ == "__main__":
+    main()
