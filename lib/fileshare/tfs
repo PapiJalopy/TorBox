@@ -65,21 +65,51 @@ def main(name, onion_domain, file_path, dev):
 
 
 def run_webserver(instance_name, dev=True):
+    from main import app, BASE_DIR
     if dev:
         # Dev
-        from main import main as dev_main
-
-        dev_main()
-
+        app.run(debug=True)
         quit()
     else:
-        # TODO: Production: run flask for production
+        import atexit
+        from gunicorn.app.base import BaseApplication
 
-        # Remove pid file
-        try:
-            os.remove(settings.BASE_DIR / f"pid/{instance_name}.pid")
-        except:
-            pass
+        def stop_webserver():
+            # Remove pid file in case it exists
+            try:
+                os.remove(BASE_DIR / f"pid/{instance_name}.pid")
+            except:  # noqa
+                pass
+
+            quit()
+
+        class TFSApp(BaseApplication):
+            def load_config(self):
+                self.cfg.set("bind", f"unix:/tmp/tfs_{instance_name}.sock")
+                self.cfg.set("workers", 2)
+                self.cfg.set("loglevel", "error")
+                # self.cfg.set("loglevel", "debug")  # dev
+                # self.cfg.set("bind", f"0.0.0.0:8888")  # dev
+
+            def load(self):
+                return app
+
+            def run(self):
+                pid = os.getpid()
+                pid_file = BASE_DIR / f"pid/{instance_name}.pid"
+                with open(pid_file, "w") as f:
+                    f.write(str(pid))
+                atexit.register(stop_webserver)
+
+                super().run()
+
+                # Remove pid file
+                try:
+                    os.remove(BASE_DIR / f"pid/{instance_name}.pid")
+                except:  # noqa
+                    pass
+
+        TFSApp(app).run()
 
 
 if __name__ == "__main__":

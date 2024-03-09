@@ -15,11 +15,11 @@ from utils.files import list_files, format_size, has_permissions, download_dir
 ONION_DOMAIN = os.environ.get('ONION_DOMAIN')
 DOWNLOADS_PATH = os.environ.get('MEDIA_ROOT')
 
-BASE_PATH = Path(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
 app = Flask(
     __name__,
     static_url_path='/assets',
-    static_folder=BASE_PATH / "webclient/dist/assets/"
+    static_folder=BASE_DIR / "webclient/dist/assets"
 )
 CORS(app, origins=ONION_DOMAIN)
 Compress(app)
@@ -140,7 +140,7 @@ def download_folder():
 # webclient index.html located in webclient/dist
 @app.route('/')
 def index():
-    return send_from_directory(BASE_PATH / "webclient/dist", 'index.html')
+    return send_from_directory(BASE_DIR / "webclient/dist", 'index.html')
 
 
 def main():
