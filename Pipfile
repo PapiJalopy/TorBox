@@ -15,6 +15,8 @@ flask-cors = "*"
 peewee = "*"
 pgpy = "*"
 urwid = "*"
+tornado = "*"
+paramiko = "*"
 
 [dev-packages]
 opencv-python-headless = "*"
